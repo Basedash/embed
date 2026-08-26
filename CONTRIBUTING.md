@@ -19,7 +19,11 @@ pnpm changeset
 ```
 
 Choose patch for backward-compatible fixes, minor for new APIs, and major for
-breaking changes. Publishing is managed by the Basedash maintainers.
+breaking changes.
+
+After a changeset reaches `main`, the release workflow creates or updates a
+version pull request. Merging that pull request publishes the new version to
+npm through trusted publishing and creates the corresponding GitHub release.
 
 ## Security
 
