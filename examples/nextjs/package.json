@@ -1,0 +1,15 @@
+{
+  "name": "basedash-embed-nextjs-example",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@basedash/embed": "^0.1.0",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  }
+}
