@@ -7,6 +7,7 @@ export const EMBED_QUERY_PARAMS = {
   hideDashboards: "hide_dashboards",
   hideInsights: "hide_insights",
   hideAutomations: "hide_automations",
+  hideModels: "hide_models",
   hideSuggestedPrompts: "hide_suggested_prompts",
 } as const;
 
@@ -32,6 +33,7 @@ export interface EmbedOptions {
   hideDashboards?: boolean;
   hideInsights?: boolean;
   hideAutomations?: boolean;
+  hideModels?: boolean;
   hideSuggestedPrompts?: boolean;
 }
 
@@ -68,6 +70,7 @@ export const DEFAULT_EMBED_OPTIONS = {
   hideDashboards: false,
   hideInsights: false,
   hideAutomations: false,
+  hideModels: false,
   hideSuggestedPrompts: false,
 } as const satisfies Required<EmbedOptions>;
 
@@ -77,6 +80,7 @@ export const CHAT_EMBED_OPTIONS = {
   hideDashboards: true,
   hideInsights: true,
   hideAutomations: true,
+  hideModels: true,
 } as const satisfies Required<EmbedOptions>;
 
 export const DASHBOARDS_EMBED_OPTIONS = {
@@ -85,6 +89,7 @@ export const DASHBOARDS_EMBED_OPTIONS = {
   hideChat: true,
   hideInsights: true,
   hideAutomations: true,
+  hideModels: true,
 } as const satisfies Required<EmbedOptions>;
 
 export const INSIGHTS_EMBED_OPTIONS = {
@@ -93,6 +98,7 @@ export const INSIGHTS_EMBED_OPTIONS = {
   hideChat: true,
   hideDashboards: true,
   hideAutomations: true,
+  hideModels: true,
 } as const satisfies Required<EmbedOptions>;
 
 export const AUTOMATIONS_EMBED_OPTIONS = {
@@ -101,6 +107,16 @@ export const AUTOMATIONS_EMBED_OPTIONS = {
   hideChat: true,
   hideDashboards: true,
   hideInsights: true,
+  hideModels: true,
+} as const satisfies Required<EmbedOptions>;
+
+export const MODELS_EMBED_OPTIONS = {
+  ...DEFAULT_EMBED_OPTIONS,
+  hideOrgName: true,
+  hideChat: true,
+  hideDashboards: true,
+  hideInsights: true,
+  hideAutomations: true,
 } as const satisfies Required<EmbedOptions>;
 
 export function buildEmbedUrl({
@@ -122,6 +138,7 @@ export function buildEmbedUrl({
       options?.hideInsights ?? DEFAULT_EMBED_OPTIONS.hideInsights,
     hideAutomations:
       options?.hideAutomations ?? DEFAULT_EMBED_OPTIONS.hideAutomations,
+    hideModels: options?.hideModels ?? DEFAULT_EMBED_OPTIONS.hideModels,
     hideSuggestedPrompts:
       options?.hideSuggestedPrompts ??
       DEFAULT_EMBED_OPTIONS.hideSuggestedPrompts,
@@ -148,6 +165,10 @@ export function buildEmbedUrl({
   url.searchParams.set(
     EMBED_QUERY_PARAMS.hideAutomations,
     String(resolvedOptions.hideAutomations),
+  );
+  url.searchParams.set(
+    EMBED_QUERY_PARAMS.hideModels,
+    String(resolvedOptions.hideModels),
   );
   url.searchParams.set(
     EMBED_QUERY_PARAMS.hideSuggestedPrompts,

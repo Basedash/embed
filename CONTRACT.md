@@ -26,6 +26,7 @@ Source in the app repository:
 | `hideDashboards` | `hide_dashboards` | boolean |
 | `hideInsights` | `hide_insights` | boolean |
 | `hideAutomations` | `hide_automations` | boolean |
+| `hideModels` | `hide_models` | boolean |
 | `hideSuggestedPrompts` | `hide_suggested_prompts` | boolean |
 
 Sources in the app repository:

@@ -6,6 +6,7 @@ export {
   DEFAULT_EMBED_OPTIONS,
   EMBED_QUERY_PARAMS,
   INSIGHTS_EMBED_OPTIONS,
+  MODELS_EMBED_OPTIONS,
   buildEmbedUrl,
   buildSharedDashboardUrl,
 } from "./embed";

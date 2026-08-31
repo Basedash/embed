@@ -6,6 +6,7 @@ import {
   DASHBOARDS_EMBED_OPTIONS,
   DEFAULT_BASEDASH_URL,
   INSIGHTS_EMBED_OPTIONS,
+  MODELS_EMBED_OPTIONS,
   buildEmbedUrl,
   buildSharedDashboardUrl,
 } from "../src";
@@ -24,6 +25,7 @@ describe("buildEmbedUrl", () => {
       hide_dashboards: "false",
       hide_insights: "false",
       hide_automations: "false",
+      hide_models: "false",
       hide_suggested_prompts: "false",
     });
   });
@@ -54,24 +56,35 @@ describe("buildEmbedUrl", () => {
       hideDashboards: true,
       hideInsights: true,
       hideAutomations: true,
+      hideModels: true,
     });
     expect(DASHBOARDS_EMBED_OPTIONS).toMatchObject({
       hideChat: true,
       hideDashboards: false,
       hideInsights: true,
       hideAutomations: true,
+      hideModels: true,
     });
     expect(INSIGHTS_EMBED_OPTIONS).toMatchObject({
       hideChat: true,
       hideDashboards: true,
       hideInsights: false,
       hideAutomations: true,
+      hideModels: true,
     });
     expect(AUTOMATIONS_EMBED_OPTIONS).toMatchObject({
       hideChat: true,
       hideDashboards: true,
       hideInsights: true,
       hideAutomations: false,
+      hideModels: true,
+    });
+    expect(MODELS_EMBED_OPTIONS).toMatchObject({
+      hideChat: true,
+      hideDashboards: true,
+      hideInsights: true,
+      hideAutomations: true,
+      hideModels: false,
     });
   });
 

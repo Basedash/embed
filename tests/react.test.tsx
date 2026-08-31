@@ -9,6 +9,7 @@ import {
   BasedashChat,
   BasedashDashboards,
   BasedashInsights,
+  BasedashModels,
   BasedashProvider,
   BasedashSharedDashboard,
 } from "../src/react";
@@ -30,6 +31,7 @@ describe("authenticated React embeds", () => {
     expect(src.searchParams.get("hide_dashboards")).toBe("true");
     expect(src.searchParams.get("hide_insights")).toBe("true");
     expect(src.searchParams.get("hide_automations")).toBe("true");
+    expect(src.searchParams.get("hide_models")).toBe("true");
   });
 
   it("renders a dashboards-only iframe and supports overrides", () => {
@@ -60,6 +62,7 @@ describe("authenticated React embeds", () => {
     expect(src.searchParams.get("hide_dashboards")).toBe("true");
     expect(src.searchParams.get("hide_insights")).toBe("false");
     expect(src.searchParams.get("hide_automations")).toBe("true");
+    expect(src.searchParams.get("hide_models")).toBe("true");
   });
 
   it("renders an automations-only iframe", () => {
@@ -72,6 +75,20 @@ describe("authenticated React embeds", () => {
     expect(src.searchParams.get("hide_dashboards")).toBe("true");
     expect(src.searchParams.get("hide_insights")).toBe("true");
     expect(src.searchParams.get("hide_automations")).toBe("false");
+    expect(src.searchParams.get("hide_models")).toBe("true");
+  });
+
+  it("renders a models-only iframe", () => {
+    const { getByTitle } = render(<BasedashModels token="token" />);
+    const src = new URL(
+      getByTitle("Basedash models").getAttribute("src") ?? "",
+    );
+
+    expect(src.searchParams.get("hide_chat")).toBe("true");
+    expect(src.searchParams.get("hide_dashboards")).toBe("true");
+    expect(src.searchParams.get("hide_insights")).toBe("true");
+    expect(src.searchParams.get("hide_automations")).toBe("true");
+    expect(src.searchParams.get("hide_models")).toBe("false");
   });
 
   it("fetches one token through BasedashProvider", async () => {
