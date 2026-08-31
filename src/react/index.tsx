@@ -15,6 +15,7 @@ import {
   DASHBOARDS_EMBED_OPTIONS,
   DEFAULT_BASEDASH_URL,
   INSIGHTS_EMBED_OPTIONS,
+  MODELS_EMBED_OPTIONS,
   buildEmbedUrl,
   buildSharedDashboardUrl,
 } from "../embed";
@@ -242,6 +243,7 @@ export interface BasedashAppProps extends AuthenticatedEmbedProps {
   hideDashboards?: boolean;
   hideInsights?: boolean;
   hideAutomations?: boolean;
+  hideModels?: boolean;
   hideSuggestedPrompts?: boolean;
 }
 
@@ -274,6 +276,13 @@ export interface BasedashAutomationsProps extends AuthenticatedEmbedProps {
   hideOrgName?: boolean;
 }
 
+export interface BasedashModelsProps extends AuthenticatedEmbedProps {
+  /**
+   * @default true
+   */
+  hideOrgName?: boolean;
+}
+
 export interface BasedashSharedDashboardProps extends BasedashFrameProps {
   publicSharingLinkId: string;
   /**
@@ -294,6 +303,7 @@ export const BasedashApp = forwardRef<HTMLIFrameElement, BasedashAppProps>(
       hideDashboards,
       hideInsights,
       hideAutomations,
+      hideModels,
       hideSuggestedPrompts,
       title = "Basedash",
       ...frameProps
@@ -312,6 +322,7 @@ export const BasedashApp = forwardRef<HTMLIFrameElement, BasedashAppProps>(
           hideDashboards,
           hideInsights,
           hideAutomations,
+          hideModels,
           hideSuggestedPrompts,
         }}
         title={title}
@@ -438,6 +449,36 @@ export const BasedashAutomations = forwardRef<
         theme: theme ?? AUTOMATIONS_EMBED_OPTIONS.theme,
         hideOrgName:
           hideOrgName ?? AUTOMATIONS_EMBED_OPTIONS.hideOrgName,
+      }}
+      title={title}
+      {...frameProps}
+    />
+  );
+});
+
+export const BasedashModels = forwardRef<
+  HTMLIFrameElement,
+  BasedashModelsProps
+>(function BasedashModels(
+  {
+    token,
+    instanceUrl,
+    theme,
+    hideOrgName,
+    title = "Basedash models",
+    ...frameProps
+  },
+  ref,
+) {
+  return (
+    <AuthenticatedBasedashFrame
+      ref={ref}
+      token={token}
+      instanceUrl={instanceUrl}
+      options={{
+        ...MODELS_EMBED_OPTIONS,
+        theme: theme ?? MODELS_EMBED_OPTIONS.theme,
+        hideOrgName: hideOrgName ?? MODELS_EMBED_OPTIONS.hideOrgName,
       }}
       title={title}
       {...frameProps}

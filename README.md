@@ -125,6 +125,16 @@ Embeds automations and hides all other primary features.
 
 The organization must have automations enabled.
 
+### `BasedashModels`
+
+Embeds models and hides all other primary features.
+
+```tsx
+<BasedashModels />
+```
+
+The organization must have models enabled.
+
 ### `BasedashApp`
 
 Embeds the complete Basedash app. Feature props map to the existing Basedash
@@ -135,12 +145,13 @@ embed configuration.
   hideOrgName
   hideInsights
   hideAutomations
+  hideModels
   hideSuggestedPrompts
 />
 ```
 
-At least one of chat, dashboards, insights, or automations must remain visible.
-Basedash falls back to chat if all four are hidden.
+At least one of chat, dashboards, insights, automations, or models must remain visible.
+Basedash falls back to chat if all five are hidden.
 
 ### `BasedashSharedDashboard`
 
