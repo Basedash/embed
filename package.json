@@ -1,6 +1,6 @@
 {
   "name": "@basedash/embed",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Typed helpers and React components for embedding Basedash",
   "license": "MIT",
   "author": "Basedash",
