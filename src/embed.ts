@@ -9,6 +9,19 @@ export const EMBED_QUERY_PARAMS = {
   hideAutomations: "hide_automations",
   hideModels: "hide_models",
   hideSuggestedPrompts: "hide_suggested_prompts",
+  hideSidebar: "hide_sidebar",
+} as const;
+
+/**
+ * Query parameters that choose the page an embed opens on. Unlike
+ * `EMBED_QUERY_PARAMS`, they are not remembered for the iframe session.
+ */
+export const INITIAL_PAGE_QUERY_PARAMS = {
+  chat: "chat_id",
+  dashboard: "dashboard_id",
+  insight: "insight_id",
+  automation: "automation_id",
+  model: "model_id",
 } as const;
 
 export type BasedashTheme = "light" | "dark" | "auto";
@@ -35,11 +48,30 @@ export interface EmbedOptions {
   hideAutomations?: boolean;
   hideModels?: boolean;
   hideSuggestedPrompts?: boolean;
+  /**
+   * Do not render the left sidebar at all, with no way to reopen it. Your app
+   * then owns navigation, so pair this with a single visible feature and, for
+   * dashboards, an initial page.
+   */
+  hideSidebar?: boolean;
+}
+
+export type EmbedInitialPageType = keyof typeof INITIAL_PAGE_QUERY_PARAMS;
+
+/**
+ * The page an embed opens on. This only chooses where the embed starts: users
+ * can still navigate elsewhere. Basedash ignores it and opens the default page
+ * when the page's feature is hidden or disabled.
+ */
+export interface EmbedInitialPage {
+  type: EmbedInitialPageType;
+  id: string;
 }
 
 export interface BuildEmbedUrlOptions {
   token: string;
   options?: EmbedOptions;
+  initialPage?: EmbedInitialPage;
   /**
    * Override this when embedding a self-hosted Basedash instance.
    *
@@ -72,6 +104,7 @@ export const DEFAULT_EMBED_OPTIONS = {
   hideAutomations: false,
   hideModels: false,
   hideSuggestedPrompts: false,
+  hideSidebar: false,
 } as const satisfies Required<EmbedOptions>;
 
 export const CHAT_EMBED_OPTIONS = {
@@ -122,9 +155,13 @@ export const MODELS_EMBED_OPTIONS = {
 export function buildEmbedUrl({
   token,
   options,
+  initialPage,
   instanceUrl = DEFAULT_BASEDASH_URL,
 }: BuildEmbedUrlOptions): string {
   assertNonEmpty(token, "token");
+  if (initialPage !== undefined) {
+    assertNonEmpty(initialPage.id, "initialPage.id");
+  }
 
   const url = createInstanceUrl(instanceUrl, "api/sso/jwt");
   const resolvedOptions: Required<EmbedOptions> = {
@@ -142,6 +179,7 @@ export function buildEmbedUrl({
     hideSuggestedPrompts:
       options?.hideSuggestedPrompts ??
       DEFAULT_EMBED_OPTIONS.hideSuggestedPrompts,
+    hideSidebar: options?.hideSidebar ?? DEFAULT_EMBED_OPTIONS.hideSidebar,
   };
 
   url.searchParams.set("jwt", token);
@@ -174,6 +212,16 @@ export function buildEmbedUrl({
     EMBED_QUERY_PARAMS.hideSuggestedPrompts,
     String(resolvedOptions.hideSuggestedPrompts),
   );
+  url.searchParams.set(
+    EMBED_QUERY_PARAMS.hideSidebar,
+    String(resolvedOptions.hideSidebar),
+  );
+  if (initialPage !== undefined) {
+    url.searchParams.set(
+      INITIAL_PAGE_QUERY_PARAMS[initialPage.type],
+      initialPage.id,
+    );
+  }
 
   return url.toString();
 }
