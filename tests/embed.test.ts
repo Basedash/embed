@@ -5,6 +5,7 @@ import {
   CHAT_EMBED_OPTIONS,
   DASHBOARDS_EMBED_OPTIONS,
   DEFAULT_BASEDASH_URL,
+  INITIAL_PAGE_QUERY_PARAMS,
   INSIGHTS_EMBED_OPTIONS,
   MODELS_EMBED_OPTIONS,
   buildEmbedUrl,
@@ -27,7 +28,44 @@ describe("buildEmbedUrl", () => {
       hide_automations: "false",
       hide_models: "false",
       hide_suggested_prompts: "false",
+      hide_sidebar: "false",
     });
+  });
+
+  it("serializes hideSidebar", () => {
+    const result = new URL(
+      buildEmbedUrl({ token: "token", options: { hideSidebar: true } }),
+    );
+
+    expect(result.searchParams.get("hide_sidebar")).toBe("true");
+  });
+
+  it.each([
+    ["chat", "chat_id"],
+    ["dashboard", "dashboard_id"],
+    ["insight", "insight_id"],
+    ["automation", "automation_id"],
+    ["model", "model_id"],
+  ] as const)("serializes a %s initial page as %s", (type, param) => {
+    const result = new URL(
+      buildEmbedUrl({ token: "token", initialPage: { type, id: "entity_1" } }),
+    );
+
+    expect(result.searchParams.get(param)).toBe("entity_1");
+    for (const otherParam of Object.values(INITIAL_PAGE_QUERY_PARAMS)) {
+      if (otherParam !== param) {
+        expect(result.searchParams.has(otherParam)).toBe(false);
+      }
+    }
+  });
+
+  it("rejects an empty initial page id", () => {
+    expect(() =>
+      buildEmbedUrl({
+        token: "token",
+        initialPage: { type: "dashboard", id: " " },
+      }),
+    ).toThrow("initialPage.id must not be empty");
   });
 
   it("serializes custom options and a self-hosted base path", () => {
