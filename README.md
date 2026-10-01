@@ -105,6 +105,13 @@ features.
 <BasedashDashboards />
 ```
 
+Pass `dashboardId` to open a specific dashboard instead of the dashboards home
+page. Combine it with `hideSidebar` when your app provides its own navigation:
+
+```tsx
+<BasedashDashboards dashboardId="clx2a1b3c0000" hideSidebar />
+```
+
 ### `BasedashInsights`
 
 Embeds insights and hides all other primary features.
@@ -153,6 +160,12 @@ embed configuration.
 At least one of chat, dashboards, insights, automations, or models must remain visible.
 Basedash falls back to chat if all five are hidden.
 
+Use `initialPage` to choose the page the app opens on:
+
+```tsx
+<BasedashApp initialPage={{ type: "dashboard", id: "clx2a1b3c0000" }} />
+```
+
 ### `BasedashSharedDashboard`
 
 Embeds a read-only dashboard from a public sharing link. It does not require a
@@ -184,6 +197,43 @@ const filterToken = await createDashboardFilterToken({
   filterToken={filterToken}
 />
 ```
+
+## Opening a specific page
+
+Each feature component accepts an ID prop that opens that page instead of the
+feature's home page:
+
+| Component | Prop | `initialPage.type` |
+| --- | --- | --- |
+| `BasedashChat` | `chatId` | `chat` |
+| `BasedashDashboards` | `dashboardId` | `dashboard` |
+| `BasedashInsights` | `insightId` | `insight` |
+| `BasedashAutomations` | `automationId` | `automation` |
+| `BasedashModels` | `modelId` | `model` |
+
+This only chooses where the embed starts; users can still navigate elsewhere
+unless you also hide the sidebar and other features. Basedash opens the default
+page instead when the target's feature is hidden or disabled for the
+organization. A missing ID, or one the user can't access, shows Basedash's
+not-found page.
+
+Changing the ID reloads the iframe on the new page. Under a `fetchToken`
+provider, the component fetches a fresh token first, since the original one may
+have expired, and keeps showing the current page until it arrives. When you pass
+`token` yourself, make sure it is still valid when the ID changes.
+
+## Hiding the sidebar
+
+`hideSidebar` removes the left sidebar entirely, including its toggle button,
+keyboard shortcut, and command menu entry, so users cannot reopen it. Your app
+then owns navigation, so pair it with a single feature component and, usually,
+an ID prop:
+
+```tsx
+<BasedashDashboards dashboardId={dashboardId} hideSidebar />
+```
+
+Every authenticated component accepts `hideSidebar`. It defaults to `false`.
 
 ## Authentication options
 
@@ -253,7 +303,9 @@ const src = buildEmbedUrl({
     theme: "dark",
     hideOrgName: true,
     hideChat: true,
+    hideSidebar: true,
   },
+  initialPage: { type: "dashboard", id: "clx2a1b3c0000" },
 });
 ```
 
@@ -269,7 +321,8 @@ const src = buildSharedDashboardUrl({
 ```
 
 These helpers emit every embed option explicitly so changing or remounting an
-embed cannot inherit stale session configuration.
+embed cannot inherit stale session configuration. `initialPage` is the
+exception: it is applied once when the iframe loads and is not remembered.
 
 ## Self-hosted Basedash
 
@@ -297,7 +350,8 @@ Server token generation is identical for cloud and self-hosted instances.
 
 Tokens default to a 10-minute lifetime. Shared dashboard filter tokens default
 to one hour. A valid full-app token is only needed when the iframe establishes
-its Basedash session.
+its Basedash session, which happens again whenever its URL changes (for
+example, a new `dashboardId`).
 
 ## Current limitations
 

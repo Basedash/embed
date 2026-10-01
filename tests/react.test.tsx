@@ -127,6 +127,117 @@ describe("authenticated React embeds", () => {
     expect(await findByText("Could not load: Access denied")).toBeTruthy();
   });
 
+  it("hides the sidebar only when asked", () => {
+    const { getAllByTitle } = render(
+      <>
+        <BasedashDashboards token="token" />
+        <BasedashDashboards token="token" hideSidebar />
+      </>,
+    );
+    const [defaultFrame, hiddenFrame] = getAllByTitle("Basedash dashboards");
+
+    expect(
+      new URL(defaultFrame?.getAttribute("src") ?? "").searchParams.get(
+        "hide_sidebar",
+      ),
+    ).toBe("false");
+    expect(
+      new URL(hiddenFrame?.getAttribute("src") ?? "").searchParams.get(
+        "hide_sidebar",
+      ),
+    ).toBe("true");
+  });
+
+  it.each([
+    ["chat_id", <BasedashChat token="token" chatId="entity_1" />],
+    ["dashboard_id", <BasedashDashboards token="token" dashboardId="entity_1" />],
+    ["insight_id", <BasedashInsights token="token" insightId="entity_1" />],
+    [
+      "automation_id",
+      <BasedashAutomations token="token" automationId="entity_1" />,
+    ],
+    ["model_id", <BasedashModels token="token" modelId="entity_1" />],
+    [
+      "dashboard_id",
+      <BasedashApp
+        token="token"
+        initialPage={{ type: "dashboard", id: "entity_1" }}
+      />,
+    ],
+  ])("opens the initial page with %s", (param, element) => {
+    const { container } = render(element);
+    const src = new URL(
+      container.querySelector("iframe")?.getAttribute("src") ?? "",
+    );
+
+    expect(src.searchParams.get(param)).toBe("entity_1");
+  });
+
+  it("omits the initial page param for an empty id", () => {
+    const { getByTitle } = render(
+      <BasedashDashboards token="token" dashboardId="" />,
+    );
+    const src = new URL(
+      getByTitle("Basedash dashboards").getAttribute("src") ?? "",
+    );
+
+    expect(src.searchParams.has("dashboard_id")).toBe(false);
+  });
+
+  it("fetches a fresh provider token when the initial page changes", async () => {
+    let resolveSecondToken: (token: string) => void = () => {};
+    const fetchToken = vi
+      .fn<() => Promise<string>>()
+      .mockResolvedValueOnce("first-token")
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecondToken = resolve;
+          }),
+      );
+    const renderDashboard = (dashboardId: string) => (
+      <BasedashProvider fetchToken={fetchToken}>
+        <BasedashDashboards dashboardId={dashboardId} />
+      </BasedashProvider>
+    );
+    const getSrc = () =>
+      new URL(getByTitle("Basedash dashboards").getAttribute("src") ?? "");
+
+    const { getByTitle, rerender } = render(renderDashboard("dash_1"));
+    await waitFor(() => {
+      expect(getSrc().searchParams.get("jwt")).toBe("first-token");
+    });
+
+    rerender(renderDashboard("dash_2"));
+    await waitFor(() => {
+      expect(fetchToken).toHaveBeenCalledTimes(2);
+    });
+    // The current page stays put rather than loading with a stale token.
+    expect(getSrc().searchParams.get("dashboard_id")).toBe("dash_1");
+    expect(getSrc().searchParams.get("jwt")).toBe("first-token");
+
+    resolveSecondToken("second-token");
+    await waitFor(() => {
+      expect(getSrc().searchParams.get("dashboard_id")).toBe("dash_2");
+    });
+    expect(getSrc().searchParams.get("jwt")).toBe("second-token");
+    expect(fetchToken).toHaveBeenCalledTimes(2);
+  });
+
+  it("reuses a token prop when the initial page changes", () => {
+    const { getByTitle, rerender } = render(
+      <BasedashDashboards token="token" dashboardId="dash_1" />,
+    );
+
+    rerender(<BasedashDashboards token="token" dashboardId="dash_2" />);
+    const src = new URL(
+      getByTitle("Basedash dashboards").getAttribute("src") ?? "",
+    );
+
+    expect(src.searchParams.get("dashboard_id")).toBe("dash_2");
+    expect(src.searchParams.get("jwt")).toBe("token");
+  });
+
   it("shows a fallback until the iframe fires its load event", () => {
     const onLoad = vi.fn();
     const { getByText, getByTitle, queryByText } = render(

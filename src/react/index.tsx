@@ -25,7 +25,11 @@ import type {
   IframeHTMLAttributes,
   ReactNode,
 } from "react";
-import type { BasedashTheme, EmbedOptions } from "../embed";
+import type {
+  BasedashTheme,
+  EmbedInitialPage,
+  EmbedOptions,
+} from "../embed";
 
 export type FetchBasedashToken = () => Promise<string>;
 
@@ -235,6 +239,13 @@ interface AuthenticatedEmbedProps extends BasedashFrameProps {
    * Overrides the provider's theme.
    */
   theme?: BasedashTheme;
+  /**
+   * Do not render the left sidebar at all, with no way to reopen it. Your app
+   * then owns navigation.
+   *
+   * @default false
+   */
+  hideSidebar?: boolean;
 }
 
 export interface BasedashAppProps extends AuthenticatedEmbedProps {
@@ -245,6 +256,10 @@ export interface BasedashAppProps extends AuthenticatedEmbedProps {
   hideAutomations?: boolean;
   hideModels?: boolean;
   hideSuggestedPrompts?: boolean;
+  /**
+   * The page the embed opens on. Users can still navigate elsewhere.
+   */
+  initialPage?: EmbedInitialPage;
 }
 
 export interface BasedashChatProps extends AuthenticatedEmbedProps {
@@ -253,6 +268,10 @@ export interface BasedashChatProps extends AuthenticatedEmbedProps {
    */
   hideOrgName?: boolean;
   hideSuggestedPrompts?: boolean;
+  /**
+   * Open this chat instead of a new chat.
+   */
+  chatId?: string;
 }
 
 export interface BasedashDashboardsProps extends AuthenticatedEmbedProps {
@@ -260,6 +279,10 @@ export interface BasedashDashboardsProps extends AuthenticatedEmbedProps {
    * @default true
    */
   hideOrgName?: boolean;
+  /**
+   * Open this dashboard instead of the dashboards home page.
+   */
+  dashboardId?: string;
 }
 
 export interface BasedashInsightsProps extends AuthenticatedEmbedProps {
@@ -267,6 +290,10 @@ export interface BasedashInsightsProps extends AuthenticatedEmbedProps {
    * @default true
    */
   hideOrgName?: boolean;
+  /**
+   * Open this insight instead of the insights feed.
+   */
+  insightId?: string;
 }
 
 export interface BasedashAutomationsProps extends AuthenticatedEmbedProps {
@@ -274,6 +301,10 @@ export interface BasedashAutomationsProps extends AuthenticatedEmbedProps {
    * @default true
    */
   hideOrgName?: boolean;
+  /**
+   * Open this automation instead of the automations list.
+   */
+  automationId?: string;
 }
 
 export interface BasedashModelsProps extends AuthenticatedEmbedProps {
@@ -281,6 +312,10 @@ export interface BasedashModelsProps extends AuthenticatedEmbedProps {
    * @default true
    */
   hideOrgName?: boolean;
+  /**
+   * Open this model instead of the models list.
+   */
+  modelId?: string;
 }
 
 export interface BasedashSharedDashboardProps extends BasedashFrameProps {
@@ -305,6 +340,8 @@ export const BasedashApp = forwardRef<HTMLIFrameElement, BasedashAppProps>(
       hideAutomations,
       hideModels,
       hideSuggestedPrompts,
+      hideSidebar,
+      initialPage,
       title = "Basedash",
       ...frameProps
     },
@@ -315,6 +352,7 @@ export const BasedashApp = forwardRef<HTMLIFrameElement, BasedashAppProps>(
         ref={ref}
         token={token}
         instanceUrl={instanceUrl}
+        initialPage={initialPage}
         options={{
           theme,
           hideOrgName,
@@ -324,6 +362,7 @@ export const BasedashApp = forwardRef<HTMLIFrameElement, BasedashAppProps>(
           hideAutomations,
           hideModels,
           hideSuggestedPrompts,
+          hideSidebar,
         }}
         title={title}
         {...frameProps}
@@ -340,6 +379,8 @@ export const BasedashChat = forwardRef<HTMLIFrameElement, BasedashChatProps>(
       theme,
       hideOrgName,
       hideSuggestedPrompts,
+      hideSidebar,
+      chatId,
       title = "Basedash chat",
       ...frameProps
     },
@@ -350,6 +391,7 @@ export const BasedashChat = forwardRef<HTMLIFrameElement, BasedashChatProps>(
         ref={ref}
         token={token}
         instanceUrl={instanceUrl}
+        initialPage={toInitialPage("chat", chatId)}
         options={{
           ...CHAT_EMBED_OPTIONS,
           theme: theme ?? CHAT_EMBED_OPTIONS.theme,
@@ -357,6 +399,7 @@ export const BasedashChat = forwardRef<HTMLIFrameElement, BasedashChatProps>(
           hideSuggestedPrompts:
             hideSuggestedPrompts ??
             CHAT_EMBED_OPTIONS.hideSuggestedPrompts,
+          hideSidebar: hideSidebar ?? CHAT_EMBED_OPTIONS.hideSidebar,
         }}
         title={title}
         {...frameProps}
@@ -374,6 +417,8 @@ export const BasedashDashboards = forwardRef<
     instanceUrl,
     theme,
     hideOrgName,
+    hideSidebar,
+    dashboardId,
     title = "Basedash dashboards",
     ...frameProps
   },
@@ -384,9 +429,11 @@ export const BasedashDashboards = forwardRef<
       ref={ref}
       token={token}
       instanceUrl={instanceUrl}
+      initialPage={toInitialPage("dashboard", dashboardId)}
       options={{
         ...DASHBOARDS_EMBED_OPTIONS,
         theme: theme ?? DASHBOARDS_EMBED_OPTIONS.theme,
+        hideSidebar: hideSidebar ?? DASHBOARDS_EMBED_OPTIONS.hideSidebar,
         hideOrgName: hideOrgName ?? DASHBOARDS_EMBED_OPTIONS.hideOrgName,
       }}
       title={title}
@@ -404,6 +451,8 @@ export const BasedashInsights = forwardRef<
     instanceUrl,
     theme,
     hideOrgName,
+    hideSidebar,
+    insightId,
     title = "Basedash insights",
     ...frameProps
   },
@@ -414,9 +463,11 @@ export const BasedashInsights = forwardRef<
       ref={ref}
       token={token}
       instanceUrl={instanceUrl}
+      initialPage={toInitialPage("insight", insightId)}
       options={{
         ...INSIGHTS_EMBED_OPTIONS,
         theme: theme ?? INSIGHTS_EMBED_OPTIONS.theme,
+        hideSidebar: hideSidebar ?? INSIGHTS_EMBED_OPTIONS.hideSidebar,
         hideOrgName: hideOrgName ?? INSIGHTS_EMBED_OPTIONS.hideOrgName,
       }}
       title={title}
@@ -434,6 +485,8 @@ export const BasedashAutomations = forwardRef<
     instanceUrl,
     theme,
     hideOrgName,
+    hideSidebar,
+    automationId,
     title = "Basedash automations",
     ...frameProps
   },
@@ -444,9 +497,11 @@ export const BasedashAutomations = forwardRef<
       ref={ref}
       token={token}
       instanceUrl={instanceUrl}
+      initialPage={toInitialPage("automation", automationId)}
       options={{
         ...AUTOMATIONS_EMBED_OPTIONS,
         theme: theme ?? AUTOMATIONS_EMBED_OPTIONS.theme,
+        hideSidebar: hideSidebar ?? AUTOMATIONS_EMBED_OPTIONS.hideSidebar,
         hideOrgName:
           hideOrgName ?? AUTOMATIONS_EMBED_OPTIONS.hideOrgName,
       }}
@@ -465,6 +520,8 @@ export const BasedashModels = forwardRef<
     instanceUrl,
     theme,
     hideOrgName,
+    hideSidebar,
+    modelId,
     title = "Basedash models",
     ...frameProps
   },
@@ -475,9 +532,11 @@ export const BasedashModels = forwardRef<
       ref={ref}
       token={token}
       instanceUrl={instanceUrl}
+      initialPage={toInitialPage("model", modelId)}
       options={{
         ...MODELS_EMBED_OPTIONS,
         theme: theme ?? MODELS_EMBED_OPTIONS.theme,
+        hideSidebar: hideSidebar ?? MODELS_EMBED_OPTIONS.hideSidebar,
         hideOrgName: hideOrgName ?? MODELS_EMBED_OPTIONS.hideOrgName,
       }}
       title={title}
@@ -512,6 +571,13 @@ interface AuthenticatedBasedashFrameProps extends BasedashFrameProps {
   token: string | undefined;
   instanceUrl: string | undefined;
   options: EmbedOptions;
+  initialPage: EmbedInitialPage | undefined;
+}
+
+interface CommittedFrame {
+  src: string;
+  token: string;
+  configKey: string;
 }
 
 const AuthenticatedBasedashFrame = forwardRef<
@@ -522,6 +588,7 @@ const AuthenticatedBasedashFrame = forwardRef<
     token: tokenProp,
     instanceUrl: instanceUrlProp,
     options,
+    initialPage,
     errorFallback,
     ...frameProps
   },
@@ -531,7 +598,71 @@ const AuthenticatedBasedashFrame = forwardRef<
   const token = tokenProp ?? context?.token;
   const instanceUrl =
     instanceUrlProp ?? context?.instanceUrl ?? DEFAULT_BASEDASH_URL;
-  const theme = options.theme ?? context?.theme ?? "auto";
+  const resolvedOptions: EmbedOptions = {
+    ...options,
+    theme: options.theme ?? context?.theme ?? "auto",
+  };
+  const configKey = JSON.stringify([
+    instanceUrl,
+    resolvedOptions,
+    initialPage ?? null,
+  ]);
+  const nextSrc =
+    token === undefined
+      ? undefined
+      : buildEmbedUrl({
+          token,
+          instanceUrl,
+          options: resolvedOptions,
+          initialPage,
+        });
+
+  const [committed, setCommitted] = useState<CommittedFrame | null>(null);
+  const refreshingConfigKeyRef = useRef<string | null>(null);
+  const refreshToken = context?.refreshToken;
+
+  useEffect(() => {
+    if (token === undefined || nextSrc === undefined) return;
+
+    if (committed === null || committed.configKey === configKey) {
+      if (committed?.src !== nextSrc) {
+        setCommitted({ src: nextSrc, token, configKey });
+      }
+      return;
+    }
+
+    // A new URL re-runs the JWT SSO handshake in the iframe. Provider tokens
+    // are short-lived, so fetch a fresh one rather than replaying a token that
+    // may have expired since the provider mounted. A token passed as a prop is
+    // the caller's responsibility to keep fresh.
+    if (tokenProp !== undefined || refreshToken === undefined) {
+      setCommitted({ src: nextSrc, token, configKey });
+      return;
+    }
+    if (refreshingConfigKeyRef.current === configKey) return;
+
+    refreshingConfigKeyRef.current = configKey;
+    const pendingOptions = { instanceUrl, options: resolvedOptions, initialPage };
+    refreshToken().then(
+      (freshToken) => {
+        if (refreshingConfigKeyRef.current !== configKey) return;
+        refreshingConfigKeyRef.current = null;
+        setCommitted({
+          src: buildEmbedUrl({ token: freshToken, ...pendingOptions }),
+          token: freshToken,
+          configKey,
+        });
+      },
+      () => {
+        // The provider exposes the error, which renders errorFallback below.
+        if (refreshingConfigKeyRef.current === configKey) {
+          refreshingConfigKeyRef.current = null;
+        }
+      },
+    );
+    // resolvedOptions and initialPage are new objects every render; configKey
+    // is their stable identity.
+  }, [committed, configKey, nextSrc, refreshToken, token, tokenProp]);
 
   if (token === undefined) {
     if (context === null) {
@@ -557,17 +688,19 @@ const AuthenticatedBasedashFrame = forwardRef<
     return <>{frameProps.loadingFallback ?? null}</>;
   }
 
-  const src = buildEmbedUrl({
-    token,
-    instanceUrl,
-    options: {
-      ...options,
-      theme,
-    },
-  });
+  // While a fresh token is fetched for a new URL, keep showing the current
+  // page instead of loading the new one with a possibly expired token.
+  const src = committed?.src ?? nextSrc ?? "";
 
   return <BasedashFrame ref={ref} src={src} {...frameProps} />;
 });
+
+function toInitialPage(
+  type: EmbedInitialPage["type"],
+  id: string | undefined,
+): EmbedInitialPage | undefined {
+  return id ? { type, id } : undefined;
+}
 
 interface InternalBasedashFrameProps extends BasedashFrameProps {
   src: string;

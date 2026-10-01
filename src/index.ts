@@ -5,6 +5,7 @@ export {
   DEFAULT_BASEDASH_URL,
   DEFAULT_EMBED_OPTIONS,
   EMBED_QUERY_PARAMS,
+  INITIAL_PAGE_QUERY_PARAMS,
   INSIGHTS_EMBED_OPTIONS,
   MODELS_EMBED_OPTIONS,
   buildEmbedUrl,
@@ -16,6 +17,8 @@ export type {
   BasedashTheme,
   BuildEmbedUrlOptions,
   BuildSharedDashboardUrlOptions,
+  EmbedInitialPage,
+  EmbedInitialPageType,
   EmbedOptions,
   EmbedUser,
 } from "./embed";
