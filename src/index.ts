@@ -4,6 +4,7 @@ export {
   DASHBOARDS_EMBED_OPTIONS,
   DEFAULT_BASEDASH_URL,
   DEFAULT_EMBED_OPTIONS,
+  EMBED_CHART_COLOR_COUNT,
   EMBED_QUERY_PARAMS,
   INITIAL_PAGE_QUERY_PARAMS,
   INSIGHTS_EMBED_OPTIONS,
@@ -17,8 +18,10 @@ export type {
   BasedashTheme,
   BuildEmbedUrlOptions,
   BuildSharedDashboardUrlOptions,
+  EmbedColors,
   EmbedInitialPage,
   EmbedInitialPageType,
   EmbedOptions,
+  EmbedRadius,
   EmbedUser,
 } from "./embed";

@@ -29,14 +29,38 @@ Source in the app repository:
 | `hideModels` | `hide_models` | boolean |
 | `hideSuggestedPrompts` | `hide_suggested_prompts` | boolean |
 | `hideSidebar` | `hide_sidebar` | boolean |
+| `radius` | `radius` | `none`, `small`, `default`, `large` |
+| `colors.background` | `color_background` | 6-digit hex without `#`, or `default` |
+| `colors.sidebarBackground` | `color_sidebar_background` | 6-digit hex without `#` |
+| `colors.foreground` | `color_foreground` | 6-digit hex without `#` |
+| `colors.accent` | `color_accent` | 6-digit hex without `#` |
+| `colors.chart` | `color_chart` | 1–9 comma-separated 6-digit hex values |
 
 Basedash remembers these options for the lifetime of the iframe session, so the
-SDK always emits every option explicitly.
+SDK always emits every option explicitly. Colors are the exception:
+
+- `color_background` is always emitted (`default` when `colors` is `null`) and
+  defines the whole color set. Basedash replaces the stored colors with the
+  URL's set, so the other color params are only emitted when set.
+- If any color param is invalid, Basedash ignores the whole set and keeps the
+  session's colors. The SDK normalizes hex and throws on invalid colors, so it
+  never emits an invalid set.
+- Light or dark mode follows `color_background`, overriding `theme`.
+- `color_chart` fills the chart color slots in order: neutral, blue, orange,
+  purple, red, teal, green, yellow, pink. Basedash AI picks slots by these
+  names.
+
+The app also accepts 3-digit hex and a leading `#`; the SDK emits neither.
+
+Shared dashboards accept `radius` and the color params too. `buildSharedDashboardUrl`
+only emits them when `colors` or `radius` is set; `BasedashSharedDashboard`
+always does.
 
 Sources in the app repository:
 
 - `app/utils/queryParams.ts`
 - `app/utils/embedSession.ts`
+- `app/utils/embedAppearance.ts`
 - `app/utils/embedFeatureVisibility.ts`
 
 ## Initial page

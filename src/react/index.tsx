@@ -27,8 +27,10 @@ import type {
 } from "react";
 import type {
   BasedashTheme,
+  EmbedColors,
   EmbedInitialPage,
   EmbedOptions,
+  EmbedRadius,
 } from "../embed";
 
 export type FetchBasedashToken = () => Promise<string>;
@@ -49,6 +51,17 @@ interface BasedashProviderCommonProps {
    * @default "auto"
    */
   theme?: BasedashTheme;
+  /**
+   * Default custom colors for embeds under this provider. Light or dark mode
+   * follows `colors.background`, overriding `theme`.
+   */
+  colors?: EmbedColors | null;
+  /**
+   * Default corner radius for embeds under this provider.
+   *
+   * @default "default"
+   */
+  radius?: EmbedRadius;
 }
 
 export type BasedashProviderProps = BasedashProviderCommonProps &
@@ -76,6 +89,8 @@ export interface BasedashContextValue {
   error: Error | undefined;
   instanceUrl: string;
   theme: BasedashTheme;
+  colors: EmbedColors | null;
+  radius: EmbedRadius;
   refreshToken: () => Promise<string>;
 }
 
@@ -93,6 +108,8 @@ export function BasedashProvider({
   fetchToken,
   instanceUrl = DEFAULT_BASEDASH_URL,
   theme = "auto",
+  colors = null,
+  radius = "default",
 }: BasedashProviderProps) {
   const fetchTokenRef = useRef(fetchToken);
   const hasFetchedRef = useRef(false);
@@ -175,9 +192,11 @@ export function BasedashProvider({
       ...state,
       instanceUrl,
       theme,
+      colors,
+      radius,
       refreshToken,
     }),
-    [instanceUrl, refreshToken, state, theme],
+    [colors, instanceUrl, radius, refreshToken, state, theme],
   );
 
   return (
@@ -239,6 +258,14 @@ interface AuthenticatedEmbedProps extends BasedashFrameProps {
    * Overrides the provider's theme.
    */
   theme?: BasedashTheme;
+  /**
+   * Overrides the provider's colors. Pass `null` to use Basedash's colors.
+   */
+  colors?: EmbedColors | null;
+  /**
+   * Overrides the provider's corner radius.
+   */
+  radius?: EmbedRadius;
   /**
    * Do not render the left sidebar at all, with no way to reopen it. Your app
    * then owns navigation.
@@ -325,6 +352,14 @@ export interface BasedashSharedDashboardProps extends BasedashFrameProps {
    */
   filterToken?: string;
   instanceUrl?: string;
+  /**
+   * Custom colors. Defaults to the colors of an enclosing BasedashProvider.
+   */
+  colors?: EmbedColors | null;
+  /**
+   * Corner radius. Defaults to the radius of an enclosing BasedashProvider.
+   */
+  radius?: EmbedRadius;
 }
 
 export const BasedashApp = forwardRef<HTMLIFrameElement, BasedashAppProps>(
@@ -333,6 +368,8 @@ export const BasedashApp = forwardRef<HTMLIFrameElement, BasedashAppProps>(
       token,
       instanceUrl,
       theme,
+      colors,
+      radius,
       hideOrgName,
       hideChat,
       hideDashboards,
@@ -355,6 +392,8 @@ export const BasedashApp = forwardRef<HTMLIFrameElement, BasedashAppProps>(
         initialPage={initialPage}
         options={{
           theme,
+          colors,
+          radius,
           hideOrgName,
           hideChat,
           hideDashboards,
@@ -377,6 +416,8 @@ export const BasedashChat = forwardRef<HTMLIFrameElement, BasedashChatProps>(
       token,
       instanceUrl,
       theme,
+      colors,
+      radius,
       hideOrgName,
       hideSuggestedPrompts,
       hideSidebar,
@@ -395,6 +436,8 @@ export const BasedashChat = forwardRef<HTMLIFrameElement, BasedashChatProps>(
         options={{
           ...CHAT_EMBED_OPTIONS,
           theme: theme ?? CHAT_EMBED_OPTIONS.theme,
+          colors,
+          radius,
           hideOrgName: hideOrgName ?? CHAT_EMBED_OPTIONS.hideOrgName,
           hideSuggestedPrompts:
             hideSuggestedPrompts ??
@@ -416,6 +459,8 @@ export const BasedashDashboards = forwardRef<
     token,
     instanceUrl,
     theme,
+    colors,
+    radius,
     hideOrgName,
     hideSidebar,
     dashboardId,
@@ -433,6 +478,8 @@ export const BasedashDashboards = forwardRef<
       options={{
         ...DASHBOARDS_EMBED_OPTIONS,
         theme: theme ?? DASHBOARDS_EMBED_OPTIONS.theme,
+        colors,
+        radius,
         hideSidebar: hideSidebar ?? DASHBOARDS_EMBED_OPTIONS.hideSidebar,
         hideOrgName: hideOrgName ?? DASHBOARDS_EMBED_OPTIONS.hideOrgName,
       }}
@@ -450,6 +497,8 @@ export const BasedashInsights = forwardRef<
     token,
     instanceUrl,
     theme,
+    colors,
+    radius,
     hideOrgName,
     hideSidebar,
     insightId,
@@ -467,6 +516,8 @@ export const BasedashInsights = forwardRef<
       options={{
         ...INSIGHTS_EMBED_OPTIONS,
         theme: theme ?? INSIGHTS_EMBED_OPTIONS.theme,
+        colors,
+        radius,
         hideSidebar: hideSidebar ?? INSIGHTS_EMBED_OPTIONS.hideSidebar,
         hideOrgName: hideOrgName ?? INSIGHTS_EMBED_OPTIONS.hideOrgName,
       }}
@@ -484,6 +535,8 @@ export const BasedashAutomations = forwardRef<
     token,
     instanceUrl,
     theme,
+    colors,
+    radius,
     hideOrgName,
     hideSidebar,
     automationId,
@@ -501,6 +554,8 @@ export const BasedashAutomations = forwardRef<
       options={{
         ...AUTOMATIONS_EMBED_OPTIONS,
         theme: theme ?? AUTOMATIONS_EMBED_OPTIONS.theme,
+        colors,
+        radius,
         hideSidebar: hideSidebar ?? AUTOMATIONS_EMBED_OPTIONS.hideSidebar,
         hideOrgName:
           hideOrgName ?? AUTOMATIONS_EMBED_OPTIONS.hideOrgName,
@@ -519,6 +574,8 @@ export const BasedashModels = forwardRef<
     token,
     instanceUrl,
     theme,
+    colors,
+    radius,
     hideOrgName,
     hideSidebar,
     modelId,
@@ -536,6 +593,8 @@ export const BasedashModels = forwardRef<
       options={{
         ...MODELS_EMBED_OPTIONS,
         theme: theme ?? MODELS_EMBED_OPTIONS.theme,
+        colors,
+        radius,
         hideSidebar: hideSidebar ?? MODELS_EMBED_OPTIONS.hideSidebar,
         hideOrgName: hideOrgName ?? MODELS_EMBED_OPTIONS.hideOrgName,
       }}
@@ -553,15 +612,20 @@ export const BasedashSharedDashboard = forwardRef<
     publicSharingLinkId,
     filterToken,
     instanceUrl,
+    colors,
+    radius,
     title = "Basedash dashboard",
     ...frameProps
   },
   ref,
 ) {
+  const context = useContext(BasedashContext);
   const src = buildSharedDashboardUrl({
     publicSharingLinkId,
     filterToken,
     instanceUrl,
+    colors: colors !== undefined ? colors : (context?.colors ?? null),
+    radius: radius ?? context?.radius ?? "default",
   });
 
   return <BasedashFrame ref={ref} src={src} title={title} {...frameProps} />;
@@ -601,6 +665,10 @@ const AuthenticatedBasedashFrame = forwardRef<
   const resolvedOptions: EmbedOptions = {
     ...options,
     theme: options.theme ?? context?.theme ?? "auto",
+    // `null` is an explicit choice of Basedash's colors, so only `undefined`
+    // falls back to the provider.
+    colors: options.colors !== undefined ? options.colors : context?.colors,
+    radius: options.radius ?? context?.radius,
   };
   const configKey = JSON.stringify([
     instanceUrl,
