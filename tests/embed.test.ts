@@ -29,7 +29,73 @@ describe("buildEmbedUrl", () => {
       hide_models: "false",
       hide_suggested_prompts: "false",
       hide_sidebar: "false",
+      radius: "default",
+      color_background: "default",
     });
+  });
+
+  it("serializes colors as normalized hex and radius", () => {
+    const result = new URL(
+      buildEmbedUrl({
+        token: "token",
+        options: {
+          radius: "none",
+          colors: {
+            background: "#0B1A33",
+            sidebarBackground: "000",
+            foreground: " #eeeeee ",
+            accent: "#f60",
+            chart: ["#111111", "222"],
+          },
+        },
+      }),
+    );
+
+    expect(result.searchParams.get("radius")).toBe("none");
+    expect(result.searchParams.get("color_background")).toBe("0b1a33");
+    expect(result.searchParams.get("color_sidebar_background")).toBe("000000");
+    expect(result.searchParams.get("color_foreground")).toBe("eeeeee");
+    expect(result.searchParams.get("color_accent")).toBe("ff6600");
+    expect(result.searchParams.get("color_chart")).toBe("111111,222222");
+  });
+
+  it("omits optional colors that are not set", () => {
+    const result = new URL(
+      buildEmbedUrl({ token: "token", options: { colors: { background: "#fff" } } }),
+    );
+
+    expect(result.searchParams.get("color_background")).toBe("ffffff");
+    for (const param of [
+      "color_sidebar_background",
+      "color_foreground",
+      "color_accent",
+      "color_chart",
+    ]) {
+      expect(result.searchParams.has(param)).toBe(false);
+    }
+  });
+
+  it("rejects invalid colors", () => {
+    expect(() =>
+      buildEmbedUrl({
+        token: "token",
+        options: { colors: { background: "white" } },
+      }),
+    ).toThrow("colors.background must be a hex color");
+    expect(() =>
+      buildEmbedUrl({
+        token: "token",
+        options: { colors: { background: "#fff", chart: ["#000", "blue"] } },
+      }),
+    ).toThrow("colors.chart[1] must be a hex color");
+    expect(() =>
+      buildEmbedUrl({
+        token: "token",
+        options: {
+          colors: { background: "#fff", chart: Array(10).fill("#000") },
+        },
+      }),
+    ).toThrow("colors.chart accepts at most 9 colors");
   });
 
   it("serializes hideSidebar", () => {
@@ -155,5 +221,19 @@ describe("buildSharedDashboardUrl", () => {
     ).toBe(
       "https://charts.basedash.com/shared/customer%2Fdashboard/header.payload%2Fsignature",
     );
+  });
+
+  it("adds appearance params only when colors or radius is set", () => {
+    const result = new URL(
+      buildSharedDashboardUrl({
+        publicSharingLinkId: "link_123",
+        radius: "large",
+      }),
+    );
+
+    expect(Object.fromEntries(result.searchParams)).toEqual({
+      radius: "large",
+      color_background: "default",
+    });
   });
 });

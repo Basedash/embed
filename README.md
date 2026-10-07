@@ -235,6 +235,71 @@ an ID prop:
 
 Every authenticated component accepts `hideSidebar`. It defaults to `false`.
 
+## Matching your app's look
+
+Pass `colors` and `radius` to the provider (or to any component, including
+`BasedashSharedDashboard`) to match your product:
+
+```tsx
+<BasedashProvider
+  fetchToken={fetchToken}
+  colors={{
+    background: "#0b1a33",
+    sidebarBackground: "#07122a",
+    foreground: "#e8edf7",
+    accent: "#ff7a1a",
+  }}
+  radius="small"
+>
+  <BasedashDashboards />
+</BasedashProvider>
+```
+
+Only `background` is required. Basedash derives every other shade (borders,
+secondary text, hover and elevated surfaces) from these few colors, so the
+palette stays consistent:
+
+| Color | Used for | Default |
+| --- | --- | --- |
+| `background` | Page and card background | Required |
+| `sidebarBackground` | Sidebar and the frame around the page | A shade of `background` |
+| `foreground` | Text and icons | Near-white or near-black |
+| `accent` | Links, selection, focus rings, chart accent | Basedash blue |
+| `chart` | Chart colors (see below) | Basedash's palette |
+
+Light or dark mode follows `background`, so `colors` takes precedence over
+`theme`. Pass `colors={null}` on a component to use Basedash's colors under a
+provider that sets them. Colors are 3- or 6-digit hex values; anything else
+throws a `TypeError`. Primary buttons, fonts, and loading animations keep
+Basedash's style.
+
+`radius` is `"none"`, `"small"`, `"default"`, or `"large"` and scales the corner
+radius of cards, buttons, inputs, and dialogs.
+
+### Chart colors
+
+`chart` takes up to nine colors that fill Basedash's chart color slots in
+order. Slots you leave out keep Basedash's colors:
+
+| Slot | Name | Default |
+| --- | --- | --- |
+| 1 | Neutral | Near-white or near-black |
+| 2 | Blue | `#4679f2` |
+| 3 | Orange | `#ea863f` |
+| 4 | Purple | `#a369ea` |
+| 5 | Red | `#f84747` |
+| 6 | Teal | `#4ebcfc` |
+| 7 | Green | `#2fa86b` |
+| 8 | Yellow | `#ffd559` |
+| 9 | Pink | `#f47bd0` |
+
+Basedash AI picks chart colors by these names (it might use red for churn, for
+example), and users can too. Keep each slot's meaning when you
+replace it: pass your brand's blue as the second color, your red as the fifth,
+and so on.
+
+Changing `colors` or `radius` reloads the iframe, like changing an ID prop.
+
 ## Authentication options
 
 Use `fetchToken` when the browser should request the current user's token from
@@ -301,6 +366,8 @@ const src = buildEmbedUrl({
   token,
   options: {
     theme: "dark",
+    colors: { background: "#0b1a33", accent: "#ff7a1a" },
+    radius: "small",
     hideOrgName: true,
     hideChat: true,
     hideSidebar: true,
@@ -320,9 +387,12 @@ const src = buildSharedDashboardUrl({
 });
 ```
 
-These helpers emit every embed option explicitly so changing or remounting an
-embed cannot inherit stale session configuration. `initialPage` is the
+`buildEmbedUrl` emits every embed option explicitly so changing or remounting
+an embed cannot inherit stale session configuration. `initialPage` is the
 exception: it is applied once when the iframe loads and is not remembered.
+`buildSharedDashboardUrl` only adds `colors` and `radius` when you set one of
+them, so plain share links stay clean; when it's an iframe `src`, always set
+`colors` (`null` for Basedash's colors).
 
 ## Self-hosted Basedash
 

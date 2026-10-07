@@ -265,7 +265,86 @@ describe("BasedashSharedDashboard", () => {
     );
 
     expect(getByTitle("Basedash dashboard").getAttribute("src")).toBe(
-      "https://charts.basedash.com/shared/link_123/filter.token",
+      "https://charts.basedash.com/shared/link_123/filter.token?radius=default&color_background=default",
     );
+  });
+
+  it("uses the provider's colors and radius unless overridden", () => {
+    const { getAllByTitle } = render(
+      <BasedashProvider
+        token="token"
+        colors={{ background: "#0b1a33" }}
+        radius="large"
+      >
+        <BasedashSharedDashboard publicSharingLinkId="link_1" />
+        <BasedashSharedDashboard
+          publicSharingLinkId="link_2"
+          colors={null}
+          radius="none"
+        />
+      </BasedashProvider>,
+    );
+    const [inherited, overridden] = getAllByTitle("Basedash dashboard").map(
+      (frame) => new URL(frame.getAttribute("src") ?? "").searchParams,
+    );
+
+    expect(inherited?.get("color_background")).toBe("0b1a33");
+    expect(inherited?.get("radius")).toBe("large");
+    expect(overridden?.get("color_background")).toBe("default");
+    expect(overridden?.get("radius")).toBe("none");
+  });
+});
+
+describe("appearance", () => {
+  it("inherits provider colors, and null opts back into Basedash's colors", async () => {
+    const { getAllByTitle } = render(
+      <BasedashProvider
+        token="token"
+        colors={{ background: "#0b1a33", accent: "#f60" }}
+        radius="small"
+      >
+        <BasedashDashboards />
+        <BasedashDashboards colors={null} radius="default" />
+      </BasedashProvider>,
+    );
+
+    await waitFor(() => {
+      expect(getAllByTitle("Basedash dashboards")).toHaveLength(2);
+    });
+    const [inherited, overridden] = getAllByTitle("Basedash dashboards").map(
+      (frame) => new URL(frame.getAttribute("src") ?? "").searchParams,
+    );
+
+    expect(inherited?.get("color_background")).toBe("0b1a33");
+    expect(inherited?.get("color_accent")).toBe("ff6600");
+    expect(inherited?.get("radius")).toBe("small");
+    expect(overridden?.get("color_background")).toBe("default");
+    expect(overridden?.has("color_accent")).toBe(false);
+    expect(overridden?.get("radius")).toBe("default");
+  });
+
+  it("reloads with a fresh token when colors change", async () => {
+    const fetchToken = vi
+      .fn<() => Promise<string>>()
+      .mockResolvedValueOnce("first-token")
+      .mockResolvedValueOnce("second-token");
+    const renderApp = (background: string) => (
+      <BasedashProvider fetchToken={fetchToken} colors={{ background }}>
+        <BasedashApp />
+      </BasedashProvider>
+    );
+    const getSrc = () =>
+      new URL(getByTitle("Basedash").getAttribute("src") ?? "");
+
+    const { getByTitle, rerender } = render(renderApp("#ffffff"));
+    await waitFor(() => {
+      expect(getSrc().searchParams.get("jwt")).toBe("first-token");
+    });
+
+    rerender(renderApp("#000000"));
+    await waitFor(() => {
+      expect(getSrc().searchParams.get("color_background")).toBe("000000");
+    });
+    expect(getSrc().searchParams.get("jwt")).toBe("second-token");
   });
 });
