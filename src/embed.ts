@@ -26,19 +26,56 @@ export const INITIAL_PAGE_QUERY_PARAMS = {
 
 export type BasedashTheme = "light" | "dark" | "auto";
 
-export type BasedashRole = "ADMIN" | "MEMBER";
+/**
+ * A Basedash organization membership role.
+ *
+ * - `ADMIN` can access everything and manage organization settings, members,
+ *   data sources, and billing.
+ * - `MEMBER` can create and edit, subject to resource access.
+ * - `VIEWER` is view-only: it can open resources shared with it, but cannot
+ *   create, edit, or chat.
+ */
+export type BasedashRole = "ADMIN" | "MEMBER" | "VIEWER";
 
 export interface EmbedUser {
   email: string;
   firstName?: string;
   lastName?: string;
+  /**
+   * Applied on every login when supplied. When omitted, an active membership
+   * keeps its role and a new or reactivated membership gets `MEMBER`. Use
+   * `VIEWER` for users who only need to view what is shared with them.
+   *
+   * Not applied when `email` belongs to a verified Basedash account that is
+   * already an active member of the organization; that account keeps the role
+   * set in Basedash.
+   */
   role?: BasedashRole;
   /**
-   * Reserved for future group synchronization support in Basedash.
+   * Names of existing Basedash groups. Applied on every login when supplied:
+   * names match existing groups case-insensitively, ignoring leading and
+   * trailing spaces; the user is added to every matched group and removed from
+   * groups this claim added on an earlier login. `[]` removes every membership
+   * the claim added, and omitting the claim leaves memberships unchanged.
+   * Groups are never created, and memberships set in Basedash, through the
+   * API, or by SCIM are never removed. Like `role`, it is not applied to a
+   * reused existing Basedash account.
+   *
+   * Group membership grants access. It can change which data sources,
+   * dashboards, and chats the user can reach, and row-level security policies
+   * receive group names, so adding a group can widen the data a user sees.
+   * Only pass names your server controls, never names a user can choose or
+   * rename.
    */
   groups?: string[];
 }
 
+/**
+ * Embed options choose what the embedded app shows. They are presentation
+ * only, not access control: a user can still open any page and run any action
+ * their Basedash role, groups, and resource access allow. Restrict access with
+ * `role` and `groups` in the signed token.
+ */
 export interface EmbedOptions {
   theme?: BasedashTheme;
   hideOrgName?: boolean;
@@ -51,7 +88,8 @@ export interface EmbedOptions {
   /**
    * Do not render the left sidebar at all, with no way to reopen it. Your app
    * then owns navigation, so pair this with a single visible feature and, for
-   * dashboards, an initial page.
+   * dashboards, an initial page. Like the other options, this removes
+   * navigation UI but does not stop a user from opening other pages.
    */
   hideSidebar?: boolean;
 }

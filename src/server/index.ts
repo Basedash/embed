@@ -14,6 +14,12 @@ export type EmbedSecret = string | Uint8Array;
  */
 export type TokenExpiration = string | number;
 
+/**
+ * A locked shared-dashboard filter value. Basedash renders it into chart SQL as
+ * raw text, without quoting or escaping: arrays are joined with `,`, and
+ * numbers and booleans are converted with `String()`. Never build a value from
+ * input a viewer can influence.
+ */
 export type DashboardFilterValue = string | string[] | number | boolean;
 
 export interface CreateEmbedTokenOptions {
@@ -29,6 +35,12 @@ export interface CreateEmbedTokenOptions {
 export interface CreateDashboardFilterTokenOptions {
   secret: EmbedSecret;
   dashboardLinkId: string;
+  /**
+   * Values override every other value for their variable and are rendered into
+   * chart SQL as raw text. A value whose text contains `'`, `"`, `` ` ``, `\`,
+   * `;`, `--`, or `/*` is rejected, as Basedash rejects it from a viewer for a
+   * free-text variable.
+   */
   params: Record<string, DashboardFilterValue>;
   /**
    * @default "1h"
@@ -85,6 +97,10 @@ export async function createEmbedToken({
 
 /**
  * Creates a JWT that locks filter values on a shared dashboard.
+ *
+ * Basedash renders the signed values into chart SQL as raw text. Build them
+ * only from data your server controls, such as tenant IDs from your own
+ * database, never from input a viewer can influence.
  *
  * This function must only run on a trusted server. Never send the embed secret
  * to a browser.
@@ -167,7 +183,41 @@ function assertDashboardParams(
         `params.${key} must be a string, string array, finite number, or boolean`,
       );
     }
+
+    // The value is left out of the message: it may be attacker-controlled or
+    // sensitive, and errors often end up in logs.
+    if (!isSafeFreeText(normalizeDashboardFilterValue(value))) {
+      throw new TypeError(
+        `params.${key} must not contain ${FORBIDDEN_FREE_TEXT_SEQUENCES.join(
+          " ",
+        )}`,
+      );
+    }
   }
+}
+
+/**
+ * Must match the free-text check Basedash applies to viewer-supplied values
+ * (see CONTRACT.md). Basedash does not apply it to signed values. Its other
+ * checks depend on the variable's declared type, which the SDK cannot see.
+ */
+const FORBIDDEN_FREE_TEXT_SEQUENCES = ["'", '"', "`", "\\", ";", "--", "/*"];
+
+function isSafeFreeText(value: string): boolean {
+  return !FORBIDDEN_FREE_TEXT_SEQUENCES.some((sequence) =>
+    value.includes(sequence),
+  );
+}
+
+/** Matches how Basedash turns a verified param into the text it renders. */
+function normalizeDashboardFilterValue(value: DashboardFilterValue): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.join(",");
+  }
+  return String(value);
 }
 
 function assertNonEmpty(value: string, name: string): void {

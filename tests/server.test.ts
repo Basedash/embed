@@ -1,5 +1,5 @@
-import { decodeJwt, jwtVerify } from "jose";
-import { describe, expect, it } from "vitest";
+import { SignJWT, decodeJwt, jwtVerify } from "jose";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   createDashboardFilterToken,
@@ -48,6 +48,17 @@ describe("createEmbedToken", () => {
     const payload = decodeJwt(token);
 
     expect(payload.exp).toBe((payload.iat ?? 0) + 30);
+  });
+
+  it("signs the view-only VIEWER role", async () => {
+    const token = await createEmbedToken({
+      secret,
+      orgId: "org_123",
+      user: { email: "jane@example.com", role: "VIEWER" },
+    });
+    const { payload } = await jwtVerify(token, secretKey);
+
+    expect(payload.role).toBe("VIEWER");
   });
 
   it("rejects empty server credentials and identities", async () => {
@@ -106,5 +117,88 @@ describe("createDashboardFilterToken", () => {
         },
       }),
     ).rejects.toThrow("params.invalid");
+  });
+
+  describe("values Basedash would render into SQL unsafely", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const dangerousValues: Array<[string, string | string[]]> = [
+      ["single quote", "x' OR '1'='1"],
+      ["double quote", 'x" OR "1"="1'],
+      ["backtick", "x` OR 1=1"],
+      ["backslash", "x\\' OR 1=1"],
+      ["semicolon", "x; DROP TABLE users"],
+      ["line comment", "1 OR 1=1 --"],
+      ["block comment", "1 /* comment"],
+      ["quote inside an array item", ["us", "ca') OR ('1'='1"]],
+    ];
+
+    it.each(dangerousValues)(
+      "rejects a %s before signing",
+      async (_name, value) => {
+        const sign = vi.spyOn(SignJWT.prototype, "sign");
+
+        const result = createDashboardFilterToken({
+          secret,
+          dashboardLinkId: "link_123",
+          params: { company: value },
+        });
+
+        await expect(result).rejects.toThrow(TypeError);
+        await expect(result).rejects.toThrow(
+          "params.company must not contain ' \" ` \\ ; -- /*",
+        );
+        expect(sign).not.toHaveBeenCalled();
+      },
+    );
+
+    it("leaves the rejected value out of the error message", async () => {
+      const value = "acme' UNION SELECT secret FROM vault --";
+
+      const error = await createDashboardFilterToken({
+        secret,
+        dashboardLinkId: "link_123",
+        params: { company: value },
+      }).catch((caught: unknown) => caught);
+
+      expect(error).toBeInstanceOf(TypeError);
+      expect((error as TypeError).message).not.toContain("UNION");
+      expect((error as TypeError).message).not.toContain(secret);
+    });
+
+    it("checks arrays as Basedash renders them, joined with commas", async () => {
+      const token = await createDashboardFilterToken({
+        secret,
+        dashboardLinkId: "link_123",
+        params: { ranges: ["a-", "-b", "c/", "*d"] },
+      });
+      const { payload } = await jwtVerify(token, secretKey);
+
+      expect(payload.params).toEqual({ ranges: ["a-", "-b", "c/", "*d"] });
+    });
+
+    it("accepts typical identifiers, dates, and numbers", async () => {
+      const params = {
+        company_id: "6f1c2a7e-3b9d-4c1e-9f2a-7b8c9d0e1f2a",
+        email: "jane.doe+billing@example.com",
+        start: "2024-01-31T12:00:00.000Z",
+        label: "Acme, Inc. (EMEA) 50% / Q1*",
+        empty: "",
+        regions: ["us-east-1", "eu-west-1"],
+        offset: -1.5e-7,
+        active: false,
+      };
+
+      const token = await createDashboardFilterToken({
+        secret,
+        dashboardLinkId: "link_123",
+        params,
+      });
+      const { payload } = await jwtVerify(token, secretKey);
+
+      expect(payload.params).toEqual(params);
+    });
   });
 });
