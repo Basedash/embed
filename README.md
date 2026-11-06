@@ -52,6 +52,10 @@ export async function GET() {
 into browser code or expose your embed secret through a public environment
 variable.
 
+The signed `role` and `groups` decide what the user can do in Basedash. Chat
+needs at least `MEMBER`; for users who only view dashboards, sign `VIEWER`. See
+[Access control](#access-control).
+
 ### 2. Render a Basedash component
 
 ```tsx
@@ -86,6 +90,10 @@ provider reuse the token.
 ## React components
 
 Import React APIs from `@basedash/embed/react`.
+
+Each component chooses which features the embedded app shows. Hiding a feature
+removes it from the UI only; it does not stop the user from opening it. See
+[Access control](#access-control).
 
 ### `BasedashChat`
 
@@ -198,6 +206,17 @@ const filterToken = await createDashboardFilterToken({
 />
 ```
 
+Basedash renders signed filter values into the dashboard's SQL as raw text,
+without quoting or escaping. Arrays are joined with commas. Build values only
+from data your server controls, such as a tenant ID from your own database.
+Never sign a value a viewer can influence, such as a display name, company
+name, or free-text field.
+
+`createDashboardFilterToken` throws before signing when a value contains `'`,
+`"`, `` ` ``, `\`, `;`, `--`, or `/*`, the same characters Basedash rejects in
+free-text values a viewer enters. This only narrows what a value can contain;
+it is not escaping.
+
 ## Opening a specific page
 
 Each feature component accepts an ID prop that opens that page instead of the
@@ -211,11 +230,11 @@ feature's home page:
 | `BasedashAutomations` | `automationId` | `automation` |
 | `BasedashModels` | `modelId` | `model` |
 
-This only chooses where the embed starts; users can still navigate elsewhere
-unless you also hide the sidebar and other features. Basedash opens the default
-page instead when the target's feature is hidden or disabled for the
-organization. A missing ID, or one the user can't access, shows Basedash's
-not-found page.
+This only chooses where the embed starts. Hiding the sidebar and other features
+removes the navigation UI, but users can still open any page their access
+allows. Basedash opens the default page instead when the target's feature is
+hidden or disabled for the organization. A missing ID, or one the user can't
+access, shows Basedash's not-found page.
 
 Changing the ID reloads the iframe on the new page. Under a `fetchToken`
 provider, the component fetches a fresh token first, since the original one may
@@ -234,6 +253,39 @@ an ID prop:
 ```
 
 Every authenticated component accepts `hideSidebar`. It defaults to `false`.
+
+Hiding the sidebar is presentation only, not access control.
+
+## Access control
+
+The component you render, `hideSidebar`, the `hide*` options, and `initialPage`
+only change what the embedded app shows. Basedash keeps them in the iframe's
+session and does not enforce them on its server, so they do not limit which
+pages a user can open or what they can do there.
+
+Basedash enforces access from the signed token and its own permissions:
+
+| `role` | Access |
+| --- | --- |
+| `ADMIN` | Can access everything and manage organization settings, members, data sources, and billing |
+| `MEMBER` | Can create and edit, subject to resource access |
+| `VIEWER` | View-only: can open resources shared with them; cannot create, edit, or chat |
+
+- `role` is applied on every login when supplied. When you omit it, an active
+  membership keeps its role and a new one gets `MEMBER`, so set it explicitly.
+- `groups` names existing Basedash groups and is applied on every login. Names
+  match case-insensitively; the user is added to each matched group and removed
+  from groups the claim added earlier. Groups scope data-source, dashboard, and
+  chat access, and row-level security policies receive group names, so a group
+  can widen the data a user sees. Only send group names your server controls,
+  never names a user can choose or rename, such as a team name in your app.
+- When `email` belongs to a verified Basedash account that is already an active
+  member of your organization, the embed signs in as that account and ignores
+  `role` and `groups`.
+
+For least privilege, sign `VIEWER` unless the user needs to create, edit, or
+chat, and grant data through groups your server assigns. Then restrict data
+sources, dashboards, and row-level security to those groups in Basedash.
 
 ## Authentication options
 
@@ -346,7 +398,10 @@ Server token generation is identical for cloud and self-hosted instances.
 3. Configure your production domains under allowed embed origins.
 4. Verify every token request against your own authenticated user and
    authorization rules.
-5. Connect Basedash with read-only database credentials.
+5. Sign the least-privileged `role` each user needs, and only group names your
+   server controls. Don't rely on hidden features or the sidebar to restrict
+   access.
+6. Connect Basedash with read-only database credentials.
 
 Tokens default to a 10-minute lifetime. Shared dashboard filter tokens default
 to one hour. A valid full-app token is only needed when the iframe establishes

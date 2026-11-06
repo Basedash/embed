@@ -18,6 +18,7 @@ export async function GET() {
       email: "customer@example.com",
       firstName: "Example",
       lastName: "Customer",
+      // Chat needs at least MEMBER. Sign "VIEWER" for users who only view dashboards.
       role: "MEMBER",
     },
   });
